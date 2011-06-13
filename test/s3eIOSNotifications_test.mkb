@@ -1,0 +1,19 @@
+#!/usr/bin/env mkb
+
+defines
+{
+    IW_BUILD_TESTS=1
+    IW_CANARY_UI
+}
+
+options
+{
+    strict
+}
+
+subprojects
+{
+    s3eIOSNotifications_test.mkf
+    "$MARMALADE_ROOT/test/canary/canary.mkf"
+    
+}

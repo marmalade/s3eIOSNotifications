@@ -1,0 +1,14 @@
+#!/usr/bin/env mkb
+# Builder mkb file for the s3eIOSNotifications extension on iphone
+
+platform IPHONE
+
+options
+{
+    lib
+    output-name="lib/iphone/libs3eIOSNotifications.a"
+    output-name-debug="lib/iphone/libs3eIOSNotifications_d.a"
+}
+define S3E_BUILD_EXT
+
+subproject s3eIOSNotifications_build

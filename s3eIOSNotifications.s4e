@@ -1,0 +1,177 @@
+#
+# Copyright (C) 2001-2011 Ideaworks3D Ltd.
+# All Rights Reserved.
+#
+# This document is protected by copyright, and contains information
+# proprietary to Ideaworks3D.
+# This file consists of source code released by Ideaworks3D under
+# the terms of the accompanying End User License Agreement (EULA).
+# Please do not use this program/source code before you have read the
+# EULA and have agreed to be bound by its terms.
+#
+callbacks
+
+include:
+#include <s3eTypes.h>
+
+/**
+ * @addtogroup s3egroup
+ * @{
+ */
+
+/**
+ * @defgroup iosnotificationsapigroup S3E IOS Notification API Reference
+ *
+ * This allows the user to schedule and respond to local notificiation
+ *
+ * NOTE: THIS IS CURRENTLY A BETA MODULE
+ * Interfaces are liable to change before the release version
+ *
+ * @supported
+ * - ios: On devices running iOS 4.1 or newer
+ *
+ * @platnote{ios} Only Local Notifications currently available.
+ *
+ * For more information on Notification functionality provided by the S3E module,
+ * see the "S3E IOS Notifications Overview" section of the S3E API Documentation.
+ *
+ * @{
+ */
+
+
+/**
+ * Callbacks for iOS  Notifications.
+ * These can come from either the app or OS thread
+ *
+ * @par Required Header Files
+ * s3eIOSNotifications.h
+ */
+typedef enum s3eIOSNotificationsCallback
+{
+    /** Local notification was fired */
+    S3E_IOSNOTIFICATIONS_LOCAL  = 1,
+
+    /** Remote notification was fired */
+    S3E_IOSNOTIFICATIONS_REMOTE  = 2,
+
+    S3E_IOSNOTIFICATIONS_CALLBACK_MAX = 3
+} s3eIOSNotificationsCallback;
+
+/**
+ * Structure used to hold notification data.
+ * This specifies data that must be given to create a fire date for the notification
+ *
+ * @see s3eCreatePushNotification
+ * @par Required Header Files
+ * s3eIOSNotifications.h
+ */
+typedef struct s3eIOSNotificationsToDoItem
+{
+    /**
+    * Name/ID for notification. It is recomnmended
+    * that this value is unique to each notifcation.
+    * This will make erasing notifications easier.
+    * If 2 or more notifications use the same ID the
+    * latest firing notification will be erased
+    */
+    const char*     m_EventName;
+    /**
+    * Message for notification to display in the alert
+    * box which is displayed (ONLY) if the application
+    * is in the background when the notification is fired
+    */
+    const char*     m_EventMessage;
+    
+    /**
+    * Notification Fire Date (In Milliseconds) from epoch 00:00 1/1/1970
+    */
+    uint64          m_FireDateMS;
+
+    /**
+    * Defines a badge number for the application
+    */
+    uint16             m_BadgeNo;
+} s3eIOSNotificationsToDoItem;
+
+functions:#
+/**
+ * Check to see if the device was started with a notification
+ * Method returns the origins of the application start up.
+ *
+ * @return - S3E_IOSNOTIFICATIONS_LOCAL         - App was launched by local notification,
+ *         - S3E_IOSNOTIFICATIONS_REMOTE        - App was launched by remote notification,
+ *         - S3E_IOSNOTIFICATIONS_CALLBACK_MAX  - App was not launched by a notification,
+ * @par Required Header Files
+ * s3eIOSNotifications.h
+ */
+s3eIOSNotificationsCallback s3eIOSNotificationsStartedWithNotification() S3E_IOSNOTIFICATIONS_CALLBACK_MAX
+
+/**
+ * Returns the push notification token ID for this device, if there is one.
+ *
+ * This token is used to uniquely identify this device for the purposes of
+ * push notifications. Typically your app would send this token to your server
+ * which will then be able to use it to send a push notification via the push
+ * notification system. Note that Push Notification TokenIDs can change; this
+ * is not a device GUID!
+ *
+ * @return  Notification token ID as a string or NULL.
+ * @par Required Header Files
+ * s3eIPhone.h
+ */
+const char* s3eIOSNotificationsGetRemoteNotificationToken() NULL
+
+/**
+ * Used to determin the current number of local notifications sheduled
+ * Method returns the current number of scheduled local notifications
+ * Each application can schedule up to a max 64 events
+ *
+ * @see s3eIOSNotificationsToDoItem
+ * @par Required Header Files
+ * s3eIOSNotifications.h
+ */
+int8 s3eIOSNotificationsGetScheduleSize() 0
+
+/**
+ * Creates a push notification
+ * This function takes a reference to a s3eIOSNotificationsToDoItem
+ * which is used to create a new local notification
+ *
+ * @see s3eIOSNotificationsToDoItem
+ * @par Required Header Files
+ * s3eIOSNotifications.h
+ */
+void s3eIOSNotificationsCreate(s3eIOSNotificationsToDoItem* item)
+
+/**
+ * Erases a specific notification according to its ID. If no ID is
+ * provided the function will erase ALL sheduled notifications.
+ * If multiple ID's using the same name are present the latest firing ID is cleared
+ * Method returns if the erase was successful or not.
+ *
+ * @par Required Header Files
+ * s3eIOSNotifications.h
+ */
+s3eResult s3eIOSNotificationsErase(const char* notificationID S3E_DEFAULT(NULL)) S3E_RESULT_ERROR
+
+/**
+ * Reset the application icon badge number. If 0 the app will not have a badge
+ *
+ * @see s3eIOSNotificationsToDoItem
+ * @par Required Header Files
+ * s3eIOSNotifications.h
+ */
+void s3eIOSNotificationsSetAppBadge(int16 badgeNumber S3E_DEFAULT(0))
+
+/**
+ * Indicates whether the app was started by a push notification or manually
+ * by the user.
+ *
+ * This method is deprecated in favour of s3eIOSNotifications::s3eIOSNotificationsStartedWithNotification
+ *
+ * @return - S3E_TRUE if the application was launched by a remote notification.
+ *         - S3E_FALSE if it was launched manually by the user.
+ * @par Required Header Files
+ * s3eIOSNotifications.h
+ */
+s3eBool s3eIPhone_AppStartedWithNotification() S3E_FALSE

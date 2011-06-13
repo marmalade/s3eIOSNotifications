@@ -1,0 +1,11 @@
+
+# Project file for including files in canary test
+display_name "Extensions/s3eIOSNotifications"
+
+files
+{
+    test_s3eIOSNotifications.cpp
+    test_s3eIOSNotifications.h
+}
+
+subproject s3eIOSNotifications
