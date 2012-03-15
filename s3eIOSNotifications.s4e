@@ -22,7 +22,8 @@ include:
 /**
  * @defgroup iosnotificationsapigroup S3E IOS Notification API Reference
  *
- * This allows the user to schedule and respond to local notificiation
+ * Allows the application to schedule local notificiations and respond to
+ * both local and remote notifications.
  *
  * NOTE: THIS IS CURRENTLY A BETA MODULE
  * Interfaces are liable to change before the release version
@@ -30,18 +31,21 @@ include:
  * @supported
  * - ios: On devices running iOS 4.1 or newer
  *
- * @platnote{ios} Only Local Notifications currently available.
- *
  * For more information on Notification functionality provided by the S3E module,
- * see the "S3E IOS Notifications Overview" section of the S3E API Documentation.
- *
+ * see the "S3E iOS Notifications Overview" section of the S3E API Documentation.
+ * This includes information on provisioning and certificates and how to send
+ * remote notifications.
+ */
+
+/**
+ * @}
+ * @addtogroup iosnotificationsapigroup
  * @{
  */
 
 
 /**
  * Callbacks for iOS  Notifications.
- * These can come from either the app or OS thread
  *
  * @par Required Header Files
  * s3eIOSNotifications.h
@@ -58,53 +62,172 @@ typedef enum s3eIOSNotificationsCallback
 } s3eIOSNotificationsCallback;
 
 /**
- * Structure used to hold notification data.
- * This specifies data that must be given to create a fire date for the notification
+ * Possible launch notifications.
+ *
+ * @par Required Header Files
+ * s3eIOSNotifications.h
+ */
+typedef enum s3eIOSNotificationsLaunchNotification
+{
+    /** App was launched by local notification */
+    S3E_IOSNOTIFICATIONS_LAUNCH_LOCAL   = 1,
+
+    /** App was launched by remote notification */
+    S3E_IOSNOTIFICATIONS_LAUNCH_REMOTE  = 2,
+
+    /** App was not launched from a notification */
+    S3E_IOSNOTIFICATIONS_LAUNCH_NONE    = 3
+} s3eIOSNotificationsLaunchNotification;
+
+/**
+ * Structure used to both configure local notifications and to receive data
+ * from fired local or remote notifications.
+ *
+ * To configure a local notification, populate the fileds of this structure
+ * with the desired values and pass it to s3eIOSNotificationsCreate(). Use
+ * @e m_FireDateS to specify when the notification fires. A value of zero, or
+ * a time-date in the past will cause it to fire immediately.
+ *
+ * When a notification is received, an s3eIOSNotificationsEventInfo instance
+ * will be passed as the @e systemData value to any functions registered for
+ * the #S3E_IOSNOTIFICATIONS_LOCAL or #S3E_IOSNOTIFICATIONS_REMOTE callback as
+ * appropriate. The @e m_FireDateS field will always be zero for remote
+ * notifications.
+ *
+ * When used for queuing local notifications, string values may be NULL or
+ * empty strings, in which case no data will be displayed or returned for them.
+ *
+ * s3eIOSNOtifications supports a fixed set of fields for notifications; it does
+ * not allow for custom fields.
+ *
+ * Note that for remote notifications, there is a limit of 256 bytes per
+ * notification. Goivn over this limit will result in truncation which may have
+ * unexpected effects. This data limit includes ALL fields, so the values of
+ * m_EventName, m_EventMessage and m_EventData should be kept short.
  *
  * @see s3eCreatePushNotification
+ * @see s3eCreatePushNotification
+ * @see s3eIOSNotificationsRegister
  * @par Required Header Files
  * s3eIOSNotifications.h
  */
-typedef struct s3eIOSNotificationsToDoItem
+typedef struct s3eIOSNotificationsEventInfo
 {
     /**
-    * Name/ID for notification. It is recomnmended
-    * that this value is unique to each notifcation.
-    * This will make erasing notifications easier.
-    * If 2 or more notifications use the same ID the
-    * latest firing notification will be erased
-    */
+     * Name/ID string to identify the notification.
+     *
+     * It is recommended to set a unique for each notification in order to
+     * cancel/eraes them if needed. If 2 or more notifications use the same ID
+     * the latest firing notification will be erased.
+     *
+     * Setting this value to NULL will result in no ID string being set. It
+     * will not be possible to erase/cancel it, but this will save on payload
+     * in remote notifications.
+     *
+     * In a remote notification payload, this corresponds to the "name" key.
+     */
     const char*     m_EventName;
+
     /**
-    * Message for notification to display in the alert
-    * box which is displayed (ONLY) if the application
-    * is in the background when the notification is fired
-    */
+     * Message for notification to display in the alert
+     * box, which is displayed only if the application
+     * is in the background when the notification is fired.
+     *
+     * Can be localised: To do this, add strings in <language>.strings
+     * files in the app bundle, using the string that m_EventMessage is set
+     * to as the key. See the iOS Platform Guide for more information.
+     *
+     * Setting this value to NULL will result in the notification posting
+     * and being delivered when the app as usual when in the foreground,
+     * but the user will not be shown the notification when the app
+     * is is the background or is not running.
+     *
+     * In a remote notification payload, this corresponds to the "aps":
+     * "alert" key, or "aps": "alert": "body" key, depending on how the
+     * payload is configured.
+     */
     const char*     m_EventMessage;
-    
-    /**
-    * Notification Fire Date (In Milliseconds) from epoch 00:00 1/1/1970
-    */
-    uint64          m_FireDateMS;
 
     /**
-    * Defines a badge number for the application
-    */
-    uint16             m_BadgeNo;
-} s3eIOSNotificationsToDoItem;
+     * Notification Fire Date (In Seconds) from epoch 00:00 1/1/1970
+     */
+    uint64          m_FireDateS;
 
-functions:#
+    /**
+     * Defines a badge number for the application (value shown by app icon).
+     *
+     * The badge number will be set to this value once a notification is
+     * received. This is NOT an increment. To decrement or reset the badge
+     * after receiving the notification, use s3eIOSNotificationsSetAppBadge().
+     *
+     * In a remote notification payload, this corresponds to the number in the
+     * "aps": "badge" key.
+     */
+    uint16          m_BadgeNo;
+
+    /**
+     * Additional data as a string to be delivered to the app.
+     *
+     * This data is not displayed to the user, but is passed to
+     * the app during the relevant callback. Must be set to NULL
+     * if no additional data is required. Note that for remote
+     * notifications, there is a limit of 256 bytes per notification -
+     * including other data such as m_EventName and m_EventMessage -
+     * so this value should be kept small to avoid truncation.
+     *
+     * In a remote notification payload, this corresponds to the "data" key.
+     */
+    const char*     m_EventData;
+
+    // Native options not currently supported:
+    /*
+     * Text to display on the "action" button of the notification.
+     *
+     * Can be localised: To do this, add strings in <language>.strings
+     * files in the app bundle, using the string m_AlertAction is set
+     * to as the key. See the iOS Platform Guide for more information.
+     *
+     * Set to NULL to use default text.
+     */
+    //const char*     m_AlertAction
+    //s3eBool         m_ShowAlert
+
+    /*
+     * Alternative launch splash to use when opening app from a notification.
+     *
+     * Set to a local path to a file in the app bundle.
+     *
+     * Set to NULL to use the app's default splash.
+     */
+    //const char*     m_AlertLaunchImage
+
+    /*
+     * Alternative sound to play when notification is fired.
+     *
+     * Set to a local path to a file in the bundle.
+     *
+     * Set to NULL to use the default sound.
+     */
+    //const char*     m_SoundFile
+} s3eIOSNotificationsEventInfo;
+
 /**
- * Check to see if the device was started with a notification
+ * @deprecated Legacy name for #s3eIOSNotificationsEventInfo
+ */
+#define s3eIOSNotificationsToDoItem s3eIOSNotificationsEventInfo
+
+functions:
+/**
+ * Check to see if the device was launched with a notification
  * Method returns the origins of the application start up.
  *
- * @return - S3E_IOSNOTIFICATIONS_LOCAL         - App was launched by local notification,
- *         - S3E_IOSNOTIFICATIONS_REMOTE        - App was launched by remote notification,
- *         - S3E_IOSNOTIFICATIONS_CALLBACK_MAX  - App was not launched by a notification,
+ * @return - S3E_IOSNOTIFICATIONS_LAUNCH_LOCAL  - App was launched by local notification,
+ *         - S3E_IOSNOTIFICATIONS_LAUNCH_REMOTE - App was launched by remote notification,
+ *         - S3E_IOSNOTIFICATIONS_LAUNCH_NONE   - App was not launched by a notification,
  * @par Required Header Files
  * s3eIOSNotifications.h
  */
-s3eIOSNotificationsCallback s3eIOSNotificationsStartedWithNotification() S3E_IOSNOTIFICATIONS_CALLBACK_MAX
+s3eIOSNotificationsLaunchNotification s3eIOSNotificationsGetLaunchNotification() S3E_IOSNOTIFICATIONS_LAUNCH_NONE
 
 /**
  * Returns the push notification token ID for this device, if there is one.
@@ -117,16 +240,16 @@ s3eIOSNotificationsCallback s3eIOSNotificationsStartedWithNotification() S3E_IOS
  *
  * @return  Notification token ID as a string or NULL.
  * @par Required Header Files
- * s3eIPhone.h
+ * s3eIOSNotifications.h
  */
 const char* s3eIOSNotificationsGetRemoteNotificationToken() NULL
 
 /**
  * Used to determin the current number of local notifications sheduled
  * Method returns the current number of scheduled local notifications
- * Each application can schedule up to a max 64 events
+ * Each application can schedule up to a max 64 events.
  *
- * @see s3eIOSNotificationsToDoItem
+ * @see s3eIOSNotificationsEventInfo
  * @par Required Header Files
  * s3eIOSNotifications.h
  */
@@ -134,14 +257,15 @@ int8 s3eIOSNotificationsGetScheduleSize() 0
 
 /**
  * Creates a push notification
- * This function takes a reference to a s3eIOSNotificationsToDoItem
- * which is used to create a new local notification
  *
- * @see s3eIOSNotificationsToDoItem
+ * This function takes a reference to a s3eIOSNotificationsEventInfo
+ * which is used to create a new local notification.
+ *
+ * @see s3eIOSNotificationsEventInfo
  * @par Required Header Files
  * s3eIOSNotifications.h
  */
-void s3eIOSNotificationsCreate(s3eIOSNotificationsToDoItem* item)
+void s3eIOSNotificationsCreate(s3eIOSNotificationsEventInfo* item)
 
 /**
  * Erases a specific notification according to its ID. If no ID is
@@ -155,19 +279,33 @@ void s3eIOSNotificationsCreate(s3eIOSNotificationsToDoItem* item)
 s3eResult s3eIOSNotificationsErase(const char* notificationID S3E_DEFAULT(NULL)) S3E_RESULT_ERROR
 
 /**
- * Reset the application icon badge number. If 0 the app will not have a badge
+ * Set the application icon badge number (value shown on app icon).
  *
- * @see s3eIOSNotificationsToDoItem
+ * Typically, the badge number is used to show the number of unread messages or
+ * new information waiting to be delivered, but it's meaning is always defined
+ * entirely by the app. It is always explicitly set, either by a notification
+ * (from app or server) or by this function. It is cannot be manually or
+ * automatically incremented or decremented.
+ *
+ * If 0 the app will not have a badge.
+ *
+ * @see s3eIOSNotificationsEventInfo
  * @par Required Header Files
  * s3eIOSNotifications.h
  */
 void s3eIOSNotificationsSetAppBadge(int16 badgeNumber S3E_DEFAULT(0))
 
 /**
+ * @}
+ * @addtogroup legacydeprecations
+ * @{
+ */
+
+/**
  * Indicates whether the app was started by a push notification or manually
  * by the user.
  *
- * This method is deprecated in favour of s3eIOSNotifications::s3eIOSNotificationsStartedWithNotification
+ * @deprecated Use s3eIOSNotificationsGetLaunchNotification()
  *
  * @return - S3E_TRUE if the application was launched by a remote notification.
  *         - S3E_FALSE if it was launched manually by the user.
@@ -175,3 +313,6 @@ void s3eIOSNotificationsSetAppBadge(int16 badgeNumber S3E_DEFAULT(0))
  * s3eIOSNotifications.h
  */
 s3eBool s3eIPhone_AppStartedWithNotification() S3E_FALSE
+
+append:
+/** @} */
