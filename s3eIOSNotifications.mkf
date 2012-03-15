@@ -29,6 +29,6 @@ if {{ not defined IW_MKF_IWCRT}}
 #lines will cause the extension builder to re-output this section.
 deployments
 {
-    iphone-link-libs="s3eIOSNotifications "
+    iphone-link-libs=s3eIOSNotifications
     iphone-link-libdirs=lib/iphone
 }
