@@ -1,17 +1,24 @@
 /*
-Internal header for the s3eIOSNotifications extension.
-
-This file should be used for any common function definitions etc that need to
-be shared between the platform-dependent and platform-indepdendent parts of
-this extension.
-*/
-
+ * Copyright (C) 2001-2011 Ideaworks3D Ltd.
+ * All Rights Reserved.
+ *
+ * This document is protected by copyright, and contains information
+ * proprietary to Ideaworks Labs.
+ * This file consists of source code released by Ideaworks Labs under
+ * the terms of the accompanying End User License Agreement (EULA).
+ * Please do not use this program/source code before you have read the
+ * EULA and have agreed to be bound by its terms.
+ */
 /*
+ * Internal header for the s3eIOSNotifications extension.
+ *
+ * This file should be used for any common function definitions etc that need to
+ * be shared between the platform-dependent and platform-indepdendent parts of
+ * this extension.
+ *
  * NOTE: This file was originally written by the extension builder, but will not
  * be overwritten (unless --force is specified) and is intended to be modified.
  */
-
-
 #ifndef S3EIOSNOTIFICATIONS_H_INTERNAL
 #define S3EIOSNOTIFICATIONS_H_INTERNAL
 
@@ -43,7 +50,7 @@ void s3eIOSNotificationsTerminate();
  */
 void s3eIOSNotificationsTerminate_platform();
 
-s3eIOSNotificationsCallback s3eIOSNotificationsStartedWithNotification_platform();
+s3eIOSNotificationsLaunchNotification s3eIOSNotificationsGetLaunchNotification_platform();
 const char* s3eIOSNotificationsGetRemoteNotificationToken_platform();
 int8 s3eIOSNotificationsGetScheduleSize_platform();
 void s3eIOSNotificationsCreate_platform(s3eIOSNotificationsToDoItem* item);
@@ -51,5 +58,4 @@ s3eResult s3eIOSNotificationsErase_platform(const char* notificationID);
 void s3eIOSNotificationsSetAppBadge_platform(int16 badgeNumber);
 s3eBool s3eIPhone_AppStartedWithNotification_platform();
 
-
-#endif /* S3EIOSNOTIFICATIONS_H_INTERNAL */
+#endif /* !S3EIOSNOTIFICATIONS_H_INTERNAL */
