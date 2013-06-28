@@ -117,7 +117,7 @@ typedef struct s3eIOSNotificationsEventInfo
      * Name/ID string to identify the notification.
      *
      * It is recommended to set a unique for each notification in order to
-     * cancel/eraes them if needed. If 2 or more notifications use the same ID
+     * cancel/erase them if needed. If 2 or more notifications use the same ID
      * the latest firing notification will be erased.
      *
      * Setting this value to NULL will result in no ID string being set. It
