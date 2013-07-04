@@ -245,7 +245,7 @@ s3eIOSNotificationsLaunchNotification s3eIOSNotificationsGetLaunchNotification()
 const char* s3eIOSNotificationsGetRemoteNotificationToken() NULL
 
 /**
- * Used to determin the current number of local notifications sheduled
+ * Used to determine the current number of local notifications sheduled
  * Method returns the current number of scheduled local notifications
  * Each application can schedule up to a max 64 events.
  *
